@@ -3,21 +3,21 @@
 This little C program filters ASCII text on the command line to put it into various forms. It was designed to create titles for DVD and Blu-Ray disks. Sometimes the title embedded in a DVD will have cruft characters, embedded spaces, or have funky capitalization.
 
 Along the way, it got the ability to format the text in a variety of ways. 
-
-  propercase -[haBlprtz] -x arg -g arg -b arg -[n] 
-  -h  this help 
-  -p  Proper case (the default)
-  -a  ALL CAPS 
-  -B  B A N N E R 
-  -l  lower case 
-  -r  RAnSom caSe 
-  -t  Title Case 
-  -z  laZy case (do nothing) 
-  -n  treat newlines as start 
-  With -g, arg is the incoming word separator, space by default
-  With -b, arg is the string to put between words, if any.
-  with -x, arg character output padding string 
-
+```
+    propercase -[haBlprtz] -x arg -g arg -b arg -[n] 
+      -h  this help 
+      -p  Proper case (the default)
+      -a  ALL CAPS 
+      -B  B A N N E R 
+      -l  lower case 
+      -r  RAnSom caSe 
+      -t  Title Case 
+      -z  laZy case (do nothing) 
+      -n  treat newlines as start 
+      With -g, arg is the incoming word separator, space by default
+      With -b, arg is the string to put between words, if any.
+      with -x, arg character output padding string 
+```
 # casecount.c  
 
 This is a simple program to count the uppercase, lowercase, and special characters in the input stream.
@@ -35,7 +35,7 @@ I chose not to look up words in /usr/share/dict/words To get real words, just gr
 The roots are all Greek and Latin; Germanic roots are not listed.
  
 To make the output more friendly, pipe it through other commands.
-
+```
   $ ./garble | sort -R | fmt -60 | head
   
   decontrament emtechnoeous imhomoeous imhomoeous forenymment
@@ -48,7 +48,7 @@ To make the output more friendly, pipe it through other commands.
   midscribest deteleest forevidic prestructs ilphotoen
   irmortly disscribeer disscribeer nonmicroly foregraphous
   overaquaative midjection nonautoed enchronity enmultiible
-
+```
 
 # dvdback 
 
