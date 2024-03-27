@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# This is a bash script to create isos from a stack of DVDs. 
+# Created on Ubuntu 22 and tested on 23.
+# It relies on findmnt(1), ddrescue(1), and propercase(1). 
+# findmnt(1) should be on every Linux system.
+# (optional) ddrescue is available at https://www.gnu.org/software/ddrescue/
+# (optional) propercase is at https://github.com/lorenheal/Propercase
+#
+
+# Dump program to use. If this is not 'ddrescue', uses dd. 
+# You could actually use 'cat' here, but the dd's are better.
+PRG=ddrescue
+if [ -z "`which $PRG`" ] ; then PRG=dd ; fi
+
+# Set to a writeable directory with enough space 
+outdir=~/tmp/iso
+mkdir -p $outdir 
+if [ ! -w ${outdir} ] ; then  echo "cannot write to ${outdir}" ; exit  ; fi
+
+#Echo a command, then perform it
+function echodo() 
+	{
+	echo "${*}" # comment this out to just run the command
+	${*}
+	}
+
+# Find the first drive with a mounted CD/DVD/BD
+# Waits for disc to be mounted
+function getdevice() 
+	{
+	while 
+		dev=$(findmnt -fn -o SOURCE -type=iso9660,udf)
+		[ -z "${dev}" ] 
+	do  sleep 2; done
+	echo $dev
+	}
+
+# Wait for a disc to be mounted on the given drive
+# Return just the disk label
+function dvdname() 
+	{
+	dev=${1}
+	while [ -z "`findmnt -l ${dev}`" ] 
+	do sleep 5; done
+	basename $(findmnt -n -o TARGET ${dev})| \
+		~/bin/propercase -t -g _ -b _ 
+	}
+
+# Use either ddrescue or dd to copy CD/DVD/BD to output ISO file
+# 
+function dumpdvd () 
+	{
+	IBS=$(stat -c %o ${DRIVE})  #Input block size
+	OBS=$(stat -c %o ${outdir}) #Output block size
+	if [ "$PRG" == "ddrescue" ] ; then
+		bsize=$(stat -f -c %S $DRIVE) # physical block size
+		[ $bsize -eq 0 ] && bsize=${IBS}
+		#clusters=$((${OBS}/${bsize}))
+		#echodo ddrescue ${DRIVE} -b ${bsize} -c ${clusters} ${of} ${of}-mapfile
+		echodo ddrescue ${DRIVE} -b ${bsize}  ${of} ${of}-mapfile
+		[ -f ${of}-mapfile ] && rm ${of}-mapfile
+	else
+		echodo dd \
+			if=${DRIVE} of=${of} \
+			ibs=${IBS} obs=${OBS} status=progress conv=noerror,fsync
+	fi
+	}
+
+echo "Waiting for DVD..."
+DRIVE=$(getdevice ${1})
+#[ -r $DRIVE ]  || echo "Cannot read $DRIVE" && exit
+while  [ true ] ; do 
+	read -e -p "Enter to continue with $DRIVE; q to quit." result
+	[ "$result" == "q" ] && exit
+	outiso=$(dvdname $DRIVE)
+	read -e -p "Disc name: " -i "$outiso" outiso
+	if [ -z "$outiso" ] ; then break; fi
+	of="${outdir}/${outiso}.iso" 
+	if [ -e $of ] ; then 
+		deleting="n"
+		read -e -p "$of exists. Delete? (y/n)" deleting
+		if [ ${deleting:0:1} = "y" ] ; then
+			rm $of $of-mapfile
+		fi
+	fi
+	dumpdvd ${DRIVE} ${of}
+	eject ${DRIVE}
+	ls -ltr ${outdir} | tail
+	df -h ${outdir}
+done
